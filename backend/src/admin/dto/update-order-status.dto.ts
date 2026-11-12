@@ -1,0 +1,14 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { OrderStatus } from '@prisma/client';
+import { IsEnum } from 'class-validator';
+
+export class UpdateOrderStatusDto {
+  @ApiProperty({
+    enum: OrderStatus,
+    example: OrderStatus.PROCESSING,
+  })
+  @IsEnum(OrderStatus, {
+    message: 'Status must be one of: PENDING, PROCESSING, DELIVERED, CANCELLED.',
+  })
+  status: OrderStatus;
+}

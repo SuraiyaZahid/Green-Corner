@@ -1,0 +1,34 @@
+{
+  "name": "green-corner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Green Corner — e-commerce platform for plants, fertilizers, gardening tools, seeds and pots in Bangladesh",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c green,cyan \"npm run start:dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "db:migrate": "npm run prisma:migrate -w backend",
+    "db:seed": "npm run prisma:seed -w backend",
+    "db:studio": "npm run prisma:studio -w backend",
+    "db:setup": "node backend/scripts/setup-db.js",
+    "db:cleanup-test": "node backend/scripts/cleanup-test-data.js",
+    "test:api": "node backend/scripts/smoke-test.js",
+    "test:ui": "node frontend/scripts/ui-check.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "allowScripts": {
+    "bcrypt@5.1.1": true,
+    "prisma@5.22.0": true,
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "@nestjs/core@10.4.22": true
+  }
+}

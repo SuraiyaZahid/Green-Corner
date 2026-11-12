@@ -1,0 +1,151 @@
+// Green Corner — Prisma schema
+// Base models follow the SRS (Part 2, §2 Database Schema). Additive fields
+// support the storefront requirements (multiple images, care instructions,
+// slugs, soft-delete archiving, server-side cart).
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  BKASH
+  NAGAD
+}
+
+enum PaymentStatus {
+  UNPAID
+  VERIFYING
+  PAID
+  FAILED
+}
+
+enum DeliveryArea {
+  INSIDE_DHAKA
+  OUTSIDE_DHAKA
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  role      Role     @default(USER)
+  // Bumped on logout so that JWTs issued before the logout stop validating.
+  // The value is embedded in the token and compared on every request.
+  tokenVersion Int      @default(0)
+  orders    Order[]
+  cart      Cart?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id               String      @id @default(uuid())
+  name             String
+  slug             String      @unique
+  description      String
+  careInstructions String?
+  price            Float
+  stock            Int
+  imageUrl         String?
+  images           String[]
+  isFeatured       Boolean     @default(false)
+  isArchived       Boolean     @default(false)
+  categoryId       String
+  category         Category    @relation(fields: [categoryId], references: [id])
+  orderItems       OrderItem[]
+  cartItems        CartItem[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([categoryId])
+  @@index([isArchived])
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  totalAmount   Float
+  // Delivery fee is decided server-side from `deliveryArea` and stored on the
+  // order so historical invoices never change when the rates are updated.
+  deliveryArea  DeliveryArea
+  deliveryFee   Float
+  shippingAddr  String
+  note          String?
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(UNPAID)
+  senderNumber  String?
+  trxId         String?
+  status        OrderStatus   @default(PENDING)
+  items         OrderItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([deliveryArea])
+}
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  productName String
+  quantity    Int
+  price       Float
+}

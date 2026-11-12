@@ -1,0 +1,30 @@
+node_modules/
+.puku/
+.puku-cli/
+.next/
+out/
+dist/
+build/
+coverage/
+
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Runtime-uploaded product images are not source. Ignore the directory
+# contents but keep the folder itself via .gitkeep, so the upload target
+# exists after a fresh clone.
+uploads/*
+!uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+*.log
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+.vercel
+*.tsbuildinfo
+next-env.d.ts
