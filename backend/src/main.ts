@@ -14,8 +14,10 @@ async function bootstrap() {
 
   const frontendUrl = config.get<string>('FRONTEND_URL', 'http://localhost:3000');
   app.enableCors({
-    origin: frontendUrl.split(',').map((url) => url.trim()),
+    origin: true, // এটি localhost এবং আপনার Vercel ডোমেইন—সবগুলোকেই অনুমতি দেবে
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   app.useGlobalPipes(
