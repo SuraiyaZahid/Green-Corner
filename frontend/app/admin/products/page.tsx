@@ -160,12 +160,17 @@ function ProductsContent() {
         throw new Error(payload.message ?? 'Upload failed.');
       }
 
+      // The API returns an absolute URL (Cloudinary secure_url), so it is
+      // stored as-is. Relative paths are still prefixed with the API origin.
       const base =
         process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
       const origin = base.replace(/\/api\/v1\/?$/, '');
+      const imageUrl = /^https?:\/\//i.test(payload.url)
+        ? payload.url
+        : `${origin}${payload.url}`;
       setForm((current) => ({
         ...current,
-        imageUrl: `${origin}${payload.url}`,
+        imageUrl,
       }));
       setToast({ message: 'Image uploaded.', type: 'success' });
     } catch (error) {
