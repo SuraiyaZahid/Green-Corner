@@ -96,6 +96,14 @@ export function ProductGrid({
       params.delete('page');
     }
 
+    // On a category page the category is part of the path, so pagination
+    // and sorting must stay on that path instead of jumping to /products.
+    if (lockedCategory) {
+      const query = params.toString();
+      router.push(`/category/${lockedCategory}${query ? `?${query}` : ''}`);
+      return;
+    }
+
     router.push(`/products?${params.toString()}`);
   };
 

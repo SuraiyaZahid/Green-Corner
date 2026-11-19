@@ -34,7 +34,9 @@ export default async function CategoryPage({ params }: PageProps) {
   try {
     categories = await apiRequest<Category[]>('/categories', { auth: false });
   } catch {
-    notFound();
+    // A transient API failure must not look like a missing category —
+    // render an empty category instead of a 404.
+    categories = [];
   }
 
   const category = categories.find((item) => item.slug === params.slug);

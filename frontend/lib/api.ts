@@ -59,6 +59,10 @@ export async function apiRequest<T>(
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     headers: finalHeaders,
+    // The API sends no Cache-Control header, so Next.js would otherwise
+    // keep serving a stale copy from the Data Cache — a newly created
+    // category would 404 until the cache was cleared by hand.
+    cache: 'no-store',
     body: body === undefined ? undefined : raw ? (body as BodyInit) : JSON.stringify(body),
   });
 
