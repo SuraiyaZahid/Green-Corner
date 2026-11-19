@@ -40,6 +40,10 @@ export interface Product {
   description: string;
   careInstructions: string | null;
   price: number;
+  /** The price after the store-wide discount. */
+  discountedPrice: number;
+  /** The store-wide discount percentage in force. */
+  discountPercentage: number;
   stock: number;
   imageUrl: string | null;
   images: string[];
@@ -61,13 +65,21 @@ export interface ProductListResponse {
   page: number;
   limit: number;
   totalPages: number;
+  discountPercentage: number;
+}
+
+export interface StoreSettings {
+  discountPercentage: number;
 }
 
 export interface CartItem {
   id: string;
   productId: string;
   quantity: number;
+  /** The price before the store-wide discount. */
   unitPrice: number;
+  /** The price actually charged, after the store-wide discount. */
+  discountedUnitPrice: number;
   lineTotal: number;
   product: Product;
 }
@@ -76,7 +88,14 @@ export interface Cart {
   id: string | null;
   items: CartItem[];
   totalItems: number;
+  /** The total before the store-wide discount. */
   subtotal: number;
+  /** The discount applied to the subtotal. */
+  discountAmount: number;
+  /** The store-wide discount percentage in force. */
+  discountPercentage: number;
+  /** The total the customer actually pays for the items. */
+  total: number;
 }
 
 export interface OrderItem {
@@ -101,6 +120,12 @@ export interface Order {
   totalAmount: number;
   deliveryArea: DeliveryArea;
   deliveryFee: number;
+  /** The item total before the store-wide discount. */
+  subtotalAmount: number;
+  /** The store-wide discount percentage that applied when the order was placed. */
+  discountPercentage: number;
+  /** The discount that was applied. */
+  discountAmount: number;
   shippingAddr: string;
   note: string | null;
   paymentMethod: PaymentMethod;

@@ -8,6 +8,7 @@ import { useCart } from '@/lib/cart-context';
 import { useAuth } from '@/lib/auth-context';
 import { loginUrlFor } from '@/lib/redirect';
 import { QuantityStepper } from '@/components/QuantityStepper';
+import { DiscountBadge } from '@/components/DiscountBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { Toast } from '@/components/Toast';
 
@@ -15,6 +16,9 @@ export default function CartPage() {
   const {
     items,
     subtotal,
+    discountAmount,
+    discountPercentage,
+    total,
     totalItems,
     pendingItems,
     updateQuantity,
@@ -114,14 +118,29 @@ export default function CartPage() {
 
                 <div className="flex flex-1 flex-col justify-between">
                   <div>
-                    <Link
-                      href={`/products/${item.product.slug}`}
-                      className="font-semibold text-gray-800 hover:text-emerald-800"
-                    >
-                      {item.product.name}
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/products/${item.product.slug}`}
+                        className="font-semibold text-gray-800 hover:text-emerald-800"
+                      >
+                        {item.product.name}
+                      </Link>
+                      <DiscountBadge percentage={discountPercentage} />
+                    </div>
                     <p className="mt-0.5 text-xs text-gray-500">
-                      {item.product.category.name} · {formatBDT(item.unitPrice)} each
+                      {item.product.category.name} ·{' '}
+                      {discountPercentage > 0 ? (
+                        <>
+                          <span className="font-semibold text-emerald-700">
+                            {formatBDT(item.discountedUnitPrice)}
+                          </span>{' '}
+                          <span className="text-gray-400 line-through">
+                            {formatBDT(item.unitPrice)}
+                          </span>
+                        </>
+                      ) : (
+                        <>{formatBDT(item.unitPrice)} each</>
+                      )}
                     </p>
                     {item.product.stock <= 5 && item.product.stock > 0 && (
                       <p className="mt-1 text-xs font-medium text-amber-600">
@@ -139,7 +158,7 @@ export default function CartPage() {
                       />
 
                       <span className="text-xs text-gray-500">
-                        {item.quantity} × {formatBDT(item.unitPrice)}
+                        {item.quantity} × {formatBDT(item.discountedUnitPrice)}
                       </span>
 
                       {pendingItems.includes(item.id) && (
@@ -190,6 +209,19 @@ export default function CartPage() {
                 <dt className="text-gray-500">Subtotal</dt>
                 <dd className="font-medium text-gray-800">{formatBDT(subtotal)}</dd>
               </div>
+              {discountPercentage > 0 && (
+                <div className="flex justify-between">
+                  <dt className="flex items-center gap-2 text-gray-500">
+                    Discount
+                    <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                      {discountPercentage}% OFF
+                    </span>
+                  </dt>
+                  <dd className="font-medium text-red-600">
+                    −{formatBDT(discountAmount)}
+                  </dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-gray-500">Delivery</dt>
                 <dd className="font-medium text-gray-800">
@@ -201,9 +233,15 @@ export default function CartPage() {
             <div className="mt-4 flex justify-between border-t border-gray-200 pt-4">
               <span className="font-semibold text-gray-800">Total</span>
               <span className="text-xl font-bold text-emerald-800">
-                {formatBDT(subtotal)}
+                {formatBDT(total)}
               </span>
             </div>
+
+            {discountPercentage > 0 && (
+              <p className="mt-1 text-right text-xs text-gray-400 line-through">
+                {formatBDT(subtotal)}
+              </p>
+            )}
 
             {user ? (
               <Link

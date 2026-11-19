@@ -162,6 +162,7 @@ function AdminDashboard() {
                     { label: 'Manage products', href: '/admin/products' },
                     { label: 'Manage categories', href: '/admin/categories' },
                     { label: 'Orders & verification', href: '/admin/orders' },
+                    { label: 'Store discount', href: '/admin/settings' },
                   ].map((action) => (
                     <Link
                       key={action.href}

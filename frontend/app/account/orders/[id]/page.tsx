@@ -7,6 +7,7 @@ import { apiRequest, formatBDT, formatDateTime } from '@/lib/api';
 import { deliveryAreaLabel } from '@/lib/delivery';
 import { RequireAuth } from '@/components/RequireAuth';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/Badge';
+import { DiscountBadge } from '@/components/DiscountBadge';
 import { OrderTimeline } from '@/components/OrderTimeline';
 import { Skeleton } from '@/components/EmptyState';
 import { Toast } from '@/components/Toast';
@@ -25,7 +26,8 @@ function OrderDetailContent({ orderId }: { orderId: string }) {
   const justPlaced = searchParams.get('placed') === '1';
 
   // The item subtotal is derived from the line items so the breakdown always
-  // matches what was actually ordered.
+  // matches what was actually ordered. The line prices are the discounted
+  // ones, so this is the amount after the store-wide discount.
   const itemSubtotal = Number(
     (order?.items ?? []).reduce(
       (sum, item) => sum + item.price * item.quantity,
@@ -160,9 +162,24 @@ function OrderDetailContent({ orderId }: { orderId: string }) {
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Subtotal</span>
                 <span className="text-sm font-medium text-gray-800">
-                  {formatBDT(itemSubtotal)}
+                  {formatBDT(
+                    order.discountPercentage > 0
+                      ? order.subtotalAmount
+                      : itemSubtotal,
+                  )}
                 </span>
               </div>
+              {order.discountPercentage > 0 && (
+                <div className="flex justify-between">
+                  <span className="flex items-center gap-2 text-sm text-gray-500">
+                    Discount
+                    <DiscountBadge percentage={order.discountPercentage} />
+                  </span>
+                  <span className="text-sm font-medium text-red-600">
+                    −{formatBDT(order.discountAmount)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">
                   Delivery

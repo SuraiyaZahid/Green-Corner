@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
+import { discountedPrice, round2, splitDiscount } from '../common/utils/discount';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 
@@ -25,7 +27,10 @@ export interface CartView {
     id: string;
     productId: string;
     quantity: number;
+    /** The price before the store-wide discount. */
     unitPrice: number;
+    /** The price actually charged, after the store-wide discount. */
+    discountedUnitPrice: number;
     lineTotal: number;
     product: {
       id: string;
@@ -40,12 +45,22 @@ export interface CartView {
     };
   }>;
   totalItems: number;
+  /** The total before the store-wide discount. */
   subtotal: number;
+  /** The discount applied to the subtotal. */
+  discountAmount: number;
+  /** The store-wide discount percentage in force. */
+  discountPercentage: number;
+  /** The total the customer actually pays for the items. */
+  total: number;
 }
 
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   async getCart(userId: string): Promise<CartView> {
     const cart = await this.prisma.cart.findUnique({
@@ -53,11 +68,21 @@ export class CartService {
       include: CART_INCLUDE,
     });
 
+    const discountPercentage = await this.settingsService.getDiscountPercentage();
+
     if (!cart) {
-      return { id: null, items: [], totalItems: 0, subtotal: 0 };
+      return {
+        id: null,
+        items: [],
+        totalItems: 0,
+        subtotal: 0,
+        discountAmount: 0,
+        discountPercentage,
+        total: 0,
+      };
     }
 
-    return this.mapCart(cart);
+    return this.mapCart(cart, discountPercentage);
   }
 
   async addItem(userId: string, dto: AddCartItemDto): Promise<CartView> {
@@ -145,14 +170,6 @@ export class CartService {
       throw new NotFoundException('Cart not found.');
     }
 
-    const item = await this.prisma.cartItem.findFirst({
-      where: { id: itemId, cartId: cart.id },
-    });
-
-    if (!item) {
-      throw new NotFoundException('Cart item not found.');
-    }
-
     await this.prisma.cartItem.delete({ where: { id: itemId } });
 
     return this.getCart(userId);
@@ -177,41 +194,62 @@ export class CartService {
     return this.prisma.cart.create({ data: { userId } });
   }
 
-  private mapCart(cart: {
-    id: string;
-    items: Array<{
+  private mapCart(
+    cart: {
       id: string;
-      productId: string;
-      quantity: number;
-      product: {
+      items: Array<{
         id: string;
-        name: string;
-        slug: string;
-        price: number;
-        stock: number;
-        imageUrl: string | null;
-        images: string[];
-        isArchived: boolean;
-        category: { id: string; name: string; slug: string };
+        productId: string;
+        quantity: number;
+        product: {
+          id: string;
+          name: string;
+          slug: string;
+          price: number;
+          stock: number;
+          imageUrl: string | null;
+          images: string[];
+          isArchived: boolean;
+          category: { id: string; name: string; slug: string };
+        };
+      }>;
+    },
+    discountPercentage: number,
+  ): CartView {
+    const items = cart.items.map((item) => {
+      const discountedUnitPrice = discountedPrice(
+        item.product.price,
+        discountPercentage,
+      );
+
+      return {
+        id: item.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.product.price,
+        discountedUnitPrice,
+        lineTotal: round2(discountedUnitPrice * item.quantity),
+        product: item.product,
       };
-    }>;
-  }): CartView {
-    const items = cart.items.map((item) => ({
-      id: item.id,
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.product.price,
-      lineTotal: Number((item.product.price * item.quantity).toFixed(2)),
-      product: item.product,
-    }));
+    });
+
+    const subtotal = round2(
+      items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+    );
+
+    const { discountAmount, discountedTotal } = splitDiscount(
+      subtotal,
+      discountPercentage,
+    );
 
     return {
       id: cart.id,
       items,
       totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
-      subtotal: Number(
-        items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2),
-      ),
+      subtotal,
+      discountAmount,
+      discountPercentage,
+      total: discountedTotal,
     };
   }
 }

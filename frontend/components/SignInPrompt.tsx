@@ -15,6 +15,8 @@ interface SignInPromptProps {
   product?: {
     name: string;
     price: number;
+    /** The price after the store-wide discount, when one is active. */
+    discountedPrice?: number;
     imageUrl?: string | null;
   };
 }
@@ -80,7 +82,7 @@ export function SignInPrompt({
               {product.name}
             </p>
             <p className="text-sm font-medium text-emerald-700">
-              {formatBDT(product.price)}
+              {formatBDT(product.discountedPrice ?? product.price)}
             </p>
           </div>
         </div>

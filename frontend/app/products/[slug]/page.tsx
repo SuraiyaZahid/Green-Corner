@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { apiRequest, formatBDT } from '@/lib/api';
 import { StockBadge } from '@/components/Badge';
+import { DiscountBadge } from '@/components/DiscountBadge';
+import { DiscountedPrice } from '@/components/DiscountedPrice';
 import { AddToCartButton } from '@/components/AddToCartButton';
 import type { Product } from '@/lib/types';
 
@@ -105,11 +107,23 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="text-2xl font-bold text-emerald-800">
-              {formatBDT(product.price)}
-            </span>
+            <DiscountedPrice
+              price={product.price}
+              discountedPrice={product.discountedPrice}
+              discountPercentage={product.discountPercentage}
+              size="lg"
+            />
+            <DiscountBadge percentage={product.discountPercentage} />
             <StockBadge stock={product.stock} />
           </div>
+
+          {product.discountPercentage > 0 && (
+            <p className="mt-2 text-xs font-medium text-red-600">
+              Store-wide discount of {product.discountPercentage}% applied —
+              you save {formatBDT(product.price - product.discountedPrice)} per
+              item.
+            </p>
+          )}
 
           <p className="mt-5 text-sm leading-relaxed text-gray-600">
             {product.description}
@@ -134,6 +148,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
               imageUrl={product.imageUrl}
               stock={product.stock}
               price={product.price}
+              discountedPrice={product.discountedPrice}
             />
           </div>
 

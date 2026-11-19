@@ -14,6 +14,7 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentModule } from './payment/payment.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
+import { SettingsModule } from './settings/settings.module';
 import { UploadModule } from './upload/upload.module';
 
 @Module({
@@ -42,6 +43,7 @@ import { UploadModule } from './upload/upload.module';
     PaymentModule,
     AdminModule,
     UploadModule,
+    SettingsModule,
   ],
   providers: [
     // Applied globally: every route requires a JWT unless marked @Public(),

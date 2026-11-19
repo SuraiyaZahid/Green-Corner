@@ -29,12 +29,15 @@ interface CartContextValue {
     productId: string;
     quantity: number;
     unitPrice: number;
+    discountedUnitPrice: number;
     lineTotal: number;
     product: {
       id: string;
       name: string;
       slug: string;
       price: number;
+      discountedPrice: number;
+      discountPercentage: number;
       stock: number;
       imageUrl: string | null;
       images: string[];
@@ -43,7 +46,14 @@ interface CartContextValue {
     };
   }>;
   totalItems: number;
+  /** The item total before the store-wide discount. */
   subtotal: number;
+  /** The discount applied to the subtotal. */
+  discountAmount: number;
+  /** The store-wide discount percentage in force. */
+  discountPercentage: number;
+  /** The total the customer actually pays for the items. */
+  total: number;
   loading: boolean;
   /** Item ids whose quantity is currently being written to the server. */
   pendingItems: string[];
@@ -115,7 +125,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             ? {
                 ...item,
                 quantity,
-                lineTotal: Number((item.unitPrice * quantity).toFixed(2)),
+                // The line total is based on the discounted unit price, so the
+                // optimistic total matches what the server will return.
+                lineTotal: Number(
+                  (item.discountedUnitPrice * quantity).toFixed(2),
+                ),
               }
             : item,
         ),
@@ -139,7 +153,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               ? {
                   ...item,
                   quantity: previousQuantity,
-                  lineTotal: Number((item.unitPrice * previousQuantity).toFixed(2)),
+                  lineTotal: Number(
+                    (item.discountedUnitPrice * previousQuantity).toFixed(2),
+                  ),
                 }
               : item,
           ),
@@ -170,7 +186,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       cart,
       items,
       totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
+      // The subtotal is the pre-discount total, so the summary can show what
+      // the shopper would have paid without the store discount.
       subtotal: Number(
+        items
+          .reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+          .toFixed(2),
+      ),
+      discountAmount: cart?.discountAmount ?? 0,
+      discountPercentage: cart?.discountPercentage ?? 0,
+      // The total is the sum of the discounted line totals, which the server
+      // computes from the same percentage it will charge.
+      total: Number(
         items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2),
       ),
       loading,

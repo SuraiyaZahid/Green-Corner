@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { formatBDT } from '@/lib/api';
 import { ProductCardActions } from '@/components/ProductCardActions';
+import { DiscountBadge } from '@/components/DiscountBadge';
+import { DiscountedPrice } from '@/components/DiscountedPrice';
 import type { Product } from '@/lib/types';
 
 export function ProductCard({
@@ -37,6 +38,7 @@ export function ProductCard({
           )}
 
           <div className="absolute left-2 top-2 flex flex-col gap-1">
+            <DiscountBadge percentage={product.discountPercentage} />
             {product.isFeatured && (
               <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white">
                 Featured
@@ -66,9 +68,11 @@ export function ProductCard({
             {product.description}
           </p>
           <div className="mt-auto pt-3">
-            <span className="text-base font-bold text-emerald-800">
-              {formatBDT(product.price)}
-            </span>
+            <DiscountedPrice
+              price={product.price}
+              discountedPrice={product.discountedPrice}
+              discountPercentage={product.discountPercentage}
+            />
           </div>
         </div>
       </Link>

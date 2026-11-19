@@ -72,6 +72,7 @@ export function ProductCardActions({ product }: { product: Product }) {
         product={{
           name: product.name,
           price: product.price,
+          discountedPrice: product.discountedPrice,
           imageUrl: product.imageUrl,
         }}
       />

@@ -58,6 +58,16 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+/// Singleton row holding the store-wide configuration. The `id` is pinned to
+/// "default" so there can only ever be one settings row.
+model StoreSettings {
+  id                 String   @id @default("default")
+  // Percentage off every product, 0-100. 0 disables the store discount.
+  discountPercentage Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
 model Category {
   id          String    @id @default(uuid())
   name        String    @unique
@@ -123,6 +133,11 @@ model Order {
   // order so historical invoices never change when the rates are updated.
   deliveryArea  DeliveryArea
   deliveryFee   Float
+  // The store-wide discount is resolved server-side and snapshotted onto the
+  // order, so editing the discount later never rewrites past invoices.
+  subtotalAmount      Float @default(0)
+  discountPercentage  Int   @default(0)
+  discountAmount      Float @default(0)
   shippingAddr  String
   note          String?
   paymentMethod PaymentMethod

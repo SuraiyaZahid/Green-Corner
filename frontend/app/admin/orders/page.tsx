@@ -8,6 +8,7 @@ import { RequireAuth } from '@/components/RequireAuth';
 import { AdminNav } from '@/components/AdminNav';
 import { Modal } from '@/components/Modal';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/Badge';
+import { DiscountBadge } from '@/components/DiscountBadge';
 import { Toast } from '@/components/Toast';
 import { Skeleton } from '@/components/EmptyState';
 import type {
@@ -407,9 +408,24 @@ function OrdersContent() {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Subtotal</span>
                   <span className="font-medium text-gray-800">
-                    {formatBDT(selectedSubtotal)}
+                    {formatBDT(
+                      selected.discountPercentage > 0
+                        ? selected.subtotalAmount
+                        : selectedSubtotal,
+                    )}
                   </span>
                 </div>
+                {selected.discountPercentage > 0 && (
+                  <div className="flex justify-between">
+                    <span className="flex items-center gap-2 text-gray-500">
+                      Discount
+                      <DiscountBadge percentage={selected.discountPercentage} />
+                    </span>
+                    <span className="font-medium text-red-600">
+                      −{formatBDT(selected.discountAmount)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-500">
                     Delivery

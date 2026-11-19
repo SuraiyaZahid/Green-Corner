@@ -14,6 +14,7 @@ export function AddToCartButton({
   imageUrl,
   stock,
   price,
+  discountedPrice,
 }: {
   productId: string;
   slug: string;
@@ -21,6 +22,8 @@ export function AddToCartButton({
   imageUrl: string | null;
   stock: number;
   price: number;
+  /** The price after the store-wide discount, when one is active. */
+  discountedPrice?: number;
 }) {
   const [quantity, setQuantity] = useState(1);
 
@@ -92,7 +95,7 @@ export function AddToCartButton({
         open={promptOpen}
         onClose={closePrompt}
         redirectTo={redirectTo}
-        product={{ name, price, imageUrl }}
+        product={{ name, price, discountedPrice, imageUrl }}
       />
 
       <Toast

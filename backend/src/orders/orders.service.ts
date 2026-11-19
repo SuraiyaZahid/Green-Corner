@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { OrderStatus, PaymentMethod, PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
+import { splitDiscount } from '../common/utils/discount';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { deliveryFeeFor } from './delivery.constants';
 
@@ -18,7 +20,10 @@ const ORDER_INCLUDE = {
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   async placeOrder(userId: string, dto: CreateOrderDto) {
     const cart = await this.prisma.cart.findUnique({
@@ -60,10 +65,19 @@ export class OrdersService {
         .toFixed(2),
     );
 
+    // The store-wide discount is resolved from the database and snapshotted
+    // onto the order, so editing the discount later never rewrites a past
+    // invoice.
+    const discountPercentage = await this.settingsService.getDiscountPercentage();
+    const { discountAmount, discountedTotal } = splitDiscount(
+      subtotal,
+      discountPercentage,
+    );
+
     // The delivery fee is resolved from the delivery area, so a client that
     // tampers with the request body cannot choose its own amount.
     const deliveryFee = deliveryFeeFor(dto.deliveryArea);
-    const totalAmount = Number((subtotal + deliveryFee).toFixed(2));
+    const totalAmount = Number((discountedTotal + deliveryFee).toFixed(2));
 
     const paymentStatus =
       dto.paymentMethod === PaymentMethod.COD
@@ -77,6 +91,9 @@ export class OrdersService {
           totalAmount,
           deliveryArea: dto.deliveryArea,
           deliveryFee,
+          subtotalAmount: subtotal,
+          discountPercentage,
+          discountAmount,
           shippingAddr: dto.shippingAddr.trim(),
           note: dto.note?.trim() ?? null,
           paymentMethod: dto.paymentMethod,
@@ -90,7 +107,12 @@ export class OrdersService {
               productId: item.productId,
               productName: item.product.name,
               quantity: item.quantity,
-              price: item.product.price,
+              // The price actually charged is snapshotted, so the invoice
+              // keeps showing the discounted price even after the store
+              // discount is changed or removed.
+              price: Number(
+                (item.product.price * (1 - discountPercentage / 100)).toFixed(2),
+              ),
             })),
           },
         },

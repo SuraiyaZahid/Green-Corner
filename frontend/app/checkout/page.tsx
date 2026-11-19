@@ -11,6 +11,7 @@ import { deliveryFeeFor } from '@/lib/delivery';
 import { loginUrlFor } from '@/lib/redirect';
 import { DeliveryAreaPicker } from '@/components/DeliveryAreaPicker';
 import { PaymentMethodPicker } from '@/components/PaymentMethodPicker';
+import { DiscountBadge } from '@/components/DiscountBadge';
 import { EmptyState } from '@/components/EmptyState';
 import type {
   DeliveryArea,
@@ -21,7 +22,14 @@ import type {
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, subtotal, clear } = useCart();
+  const {
+    items,
+    subtotal,
+    discountAmount,
+    discountPercentage,
+    total: discountedSubtotal,
+    clear,
+  } = useCart();
   const router = useRouter();
 
   const [merchant, setMerchant] = useState<MerchantDetails | null>(null);
@@ -36,7 +44,9 @@ export default function CheckoutPage() {
   const [busy, setBusy] = useState(false);
 
   const deliveryFee = deliveryFeeFor(deliveryArea);
-  const total = Number((subtotal + deliveryFee).toFixed(2));
+  // The item total is already discounted by the server-resolved percentage,
+  // so only the delivery fee is added on top of it here.
+  const total = Number((discountedSubtotal + deliveryFee).toFixed(2));
 
   useEffect(() => {
     apiRequest<MerchantDetails>('/payment/merchant-details', { auth: false })
@@ -256,7 +266,7 @@ export default function CheckoutPage() {
                     {item.product.name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {item.quantity} × {formatBDT(item.unitPrice)}
+                    {item.quantity} × {formatBDT(item.discountedUnitPrice)}
                   </p>
                 </div>
                 <span className="text-sm font-semibold text-gray-800">
@@ -273,6 +283,17 @@ export default function CheckoutPage() {
                 {formatBDT(subtotal)}
               </span>
             </div>
+            {discountPercentage > 0 && (
+              <div className="mt-1 flex justify-between">
+                <span className="flex items-center gap-2 text-sm text-gray-500">
+                  Discount
+                  <DiscountBadge percentage={discountPercentage} />
+                </span>
+                <span className="font-medium text-red-600">
+                  −{formatBDT(discountAmount)}
+                </span>
+              </div>
+            )}
             <div className="mt-1 flex justify-between">
               <span className="text-sm text-gray-500">Delivery</span>
               <span className="font-medium text-gray-800">
@@ -287,6 +308,12 @@ export default function CheckoutPage() {
               {formatBDT(total)}
             </span>
           </div>
+
+          {discountPercentage > 0 && (
+            <p className="mt-1 text-right text-xs text-gray-400 line-through">
+              {formatBDT(Number((subtotal + deliveryFee).toFixed(2)))}
+            </p>
+          )}
 
           <button
             type="submit"

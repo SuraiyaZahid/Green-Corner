@@ -7,7 +7,9 @@ import {
 
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { uniqueSlug } from '../common/utils/slug';
+import { discountedPrice } from '../common/utils/discount';
 import { CreateProductDto } from './dto/create-product.dto';
 import { QueryProductsDto } from './dto/query-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -18,7 +20,10 @@ const PRODUCT_INCLUDE = {
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   async findAll(query: QueryProductsDto) {
     const page = query.page ?? 1;
@@ -49,7 +54,7 @@ export class ProductsService {
 
     const orderBy = this.buildOrderBy(query.sort);
 
-    const [items, total] = await this.prisma.$transaction([
+    const [items, total, discountPercentage] = await Promise.all([
       this.prisma.product.findMany({
         where,
         include: PRODUCT_INCLUDE,
@@ -58,25 +63,32 @@ export class ProductsService {
         take: limit,
       }),
       this.prisma.product.count({ where }),
+      this.settingsService.getDiscountPercentage(),
     ]);
 
     return {
-      items,
+      items: this.withDiscount(items, discountPercentage),
       total,
       page,
       limit,
       totalPages: Math.max(1, Math.ceil(total / limit)),
+      discountPercentage,
     };
   }
 
   /** All live products — used by the seed-adjacent admin list and quick picks. */
   async findFeatured(limit = 8) {
-    return this.prisma.product.findMany({
-      where: { isArchived: false, isFeatured: true },
-      include: PRODUCT_INCLUDE,
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
+    const [products, discountPercentage] = await Promise.all([
+      this.prisma.product.findMany({
+        where: { isArchived: false, isFeatured: true },
+        include: PRODUCT_INCLUDE,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+      this.settingsService.getDiscountPercentage(),
+    ]);
+
+    return this.withDiscount(products, discountPercentage);
   }
 
   async findBySlug(slug: string) {
@@ -89,7 +101,9 @@ export class ProductsService {
       throw new NotFoundException('Product not found.');
     }
 
-    return product;
+    const discountPercentage = await this.settingsService.getDiscountPercentage();
+
+    return this.withDiscount(product, discountPercentage);
   }
 
   async findById(id: string) {
@@ -245,6 +259,31 @@ export class ProductsService {
     await this.prisma.product.delete({ where: { id } });
 
     return { message: 'Product permanently deleted.' };
+  }
+
+  /**
+   * Adds the store-wide discount to a product (or list of products) so the
+   * storefront can show the discounted price next to the original one.
+   */
+  private withDiscount<T extends { price: number }>(
+    product: T,
+    discountPercentage: number,
+  ): T & { discountedPrice: number; discountPercentage: number };
+  private withDiscount<T extends { price: number }>(
+    products: T[],
+    discountPercentage: number,
+  ): Array<T & { discountedPrice: number; discountPercentage: number }>;
+  private withDiscount<T extends { price: number }>(
+    input: T | T[],
+    discountPercentage: number,
+  ) {
+    const decorate = (product: T) => ({
+      ...product,
+      discountedPrice: discountedPrice(product.price, discountPercentage),
+      discountPercentage,
+    });
+
+    return Array.isArray(input) ? input.map(decorate) : decorate(input);
   }
 
   private buildOrderBy(sort?: string): Prisma.ProductOrderByWithRelationInput {
