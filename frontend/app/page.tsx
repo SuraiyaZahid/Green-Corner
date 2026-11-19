@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import Image from 'next/image';
-import { apiRequest, formatBDT } from '@/lib/api';
+import { apiRequest } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
+import { CategoryCard } from '@/components/CategoryCard';
 import type { Category, Product } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -84,38 +84,7 @@ export default async function HomePage() {
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
           {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={`/category/${category.slug}`}
-              className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-emerald-300 hover:shadow-card"
-            >
-              <div className="relative aspect-4/3 bg-emerald-50">
-                {category.imageUrl ? (
-                  <Image
-                    src={category.imageUrl}
-                    alt={category.name}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 16vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-3xl">
-                    🌿
-                  </div>
-                )}
-              </div>
-              <div className="p-3">
-                <h3 className="text-sm font-semibold text-gray-800 group-hover:text-emerald-800">
-                  {category.name}
-                </h3>
-                {category._count ? (
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    {category._count.products} product
-                    {category._count.products === 1 ? '' : 's'}
-                  </p>
-                ) : null}
-              </div>
-            </Link>
+            <CategoryCard key={category.id} category={category} />
           ))}
         </div>
       </section>

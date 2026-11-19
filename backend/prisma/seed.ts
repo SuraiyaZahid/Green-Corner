@@ -26,7 +26,7 @@ const categories = [
     slug: 'indoor-plants',
     description:
       'Low-light tolerant houseplants for flats, offices and living rooms.',
-    imageUrl: 'https://images.unsplash.com/photo-1614594575810-1e9b4b8b1c9b?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1506634064465-7dab4de896ed?w=800',
   },
   {
     name: 'Outdoor Plants',
@@ -53,7 +53,7 @@ const categories = [
     name: 'Seed Packets',
     slug: 'seed-packets',
     description: 'Flower and vegetable seeds suited to Bangladesh conditions.',
-    imageUrl: 'https://images.unsplash.com/photo-1621956838481-f8f6166c8d47?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1523302270222-0f256786563c?w=800',
   },
   {
     name: 'Pots & Planters',
@@ -87,7 +87,7 @@ const products: SeedProduct[] = [
     stock: 25,
     categorySlug: 'indoor-plants',
     isFeatured: true,
-    imageUrl: 'https://images.unsplash.com/photo-1614594575810-1e9b4b8b1c9b?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1747156198758-e12dfd4fe7ee?w=800',
   },
   {
     name: 'Snake Plant (Sansevieria)',
@@ -100,7 +100,7 @@ const products: SeedProduct[] = [
     stock: 18,
     categorySlug: 'indoor-plants',
     isFeatured: true,
-    imageUrl: 'https://images.unsplash.com/photo-1593482892290-f54927ae2e1f?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1636624477805-a7ebf991c948?w=800',
   },
   {
     name: 'Spider Plant',
@@ -124,7 +124,7 @@ const products: SeedProduct[] = [
     price: 950,
     stock: 12,
     categorySlug: 'indoor-plants',
-    imageUrl: 'https://images.unsplash.com/photo-1593691509543-c55fb32e5cee?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1620310252507-c65943dbd411?w=800',
   },
   {
     name: 'Aloe Vera',
@@ -136,7 +136,7 @@ const products: SeedProduct[] = [
     price: 480,
     stock: 22,
     categorySlug: 'indoor-plants',
-    imageUrl: 'https://images.unsplash.com/photo-1509423350716-97f2360af8e4?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1570295835271-04c05b4ed943?w=800',
   },
   {
     name: 'Tulsi (Holy Basil) Plant',
@@ -173,7 +173,7 @@ const products: SeedProduct[] = [
     price: 550,
     stock: 16,
     categorySlug: 'outdoor-plants',
-    imageUrl: 'https://images.unsplash.com/photo-1599685315640-9ceab2f581ca?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1626697095755-8cbda92acf60?w=800',
   },
   {
     name: 'Hibiscus (Jaba) Plant',
@@ -234,7 +234,7 @@ const products: SeedProduct[] = [
     price: 600,
     stock: 45,
     categorySlug: 'compost-fertilizers',
-    imageUrl: 'https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1613036582025-ba1d4ccb3226?w=800',
   },
   {
     name: 'Organic Liquid Fertiliser 1 L',
@@ -246,7 +246,7 @@ const products: SeedProduct[] = [
     price: 420,
     stock: 38,
     categorySlug: 'compost-fertilizers',
-    imageUrl: 'https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1599451897608-ad6eb8676edf?w=800',
   },
   {
     name: 'Cocopeat Growing Medium 5 kg',
@@ -258,7 +258,7 @@ const products: SeedProduct[] = [
     price: 300,
     stock: 50,
     categorySlug: 'compost-fertilizers',
-    imageUrl: 'https://images.unsplash.com/photo-1610921916247-9d7dbe45b6d4?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1597691306883-ac4e882e7cc4?w=800',
   },
   {
     name: 'Garden Watering Can 2 L',
@@ -271,7 +271,7 @@ const products: SeedProduct[] = [
     stock: 24,
     categorySlug: 'gardening-equipment',
     isFeatured: true,
-    imageUrl: 'https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1515150144380-bca9f1650ed9?w=800',
   },
   {
     name: 'Harvesting Shears',
@@ -283,7 +283,7 @@ const products: SeedProduct[] = [
     price: 480,
     stock: 26,
     categorySlug: 'gardening-equipment',
-    imageUrl: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1636039479790-be1d880e2b8c?w=800',
   },
   {
     name: 'Hand Trowel & Planting Tool Set',
@@ -307,7 +307,7 @@ const products: SeedProduct[] = [
     price: 1250,
     stock: 9,
     categorySlug: 'gardening-equipment',
-    imageUrl: 'https://images.unsplash.com/photo-1621956838481-f8f6166c8d47?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1588501985911-6932ea666801?w=800',
   },
   {
     name: 'Marigold Flower Seeds',
@@ -320,7 +320,7 @@ const products: SeedProduct[] = [
     stock: 120,
     categorySlug: 'seed-packets',
     isFeatured: true,
-    imageUrl: 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1584364202512-3bea473ca2b3?w=800',
   },
   {
     name: 'Tomato Seeds (Hybrid)',
@@ -344,7 +344,7 @@ const products: SeedProduct[] = [
     price: 80,
     stock: 130,
     categorySlug: 'seed-packets',
-    imageUrl: 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1579843692771-027a4a8fda48?w=800',
   },
   {
     name: 'Chilli Seeds (Kachcha Morich)',
@@ -405,7 +405,7 @@ const products: SeedProduct[] = [
     price: 1250,
     stock: 18,
     categorySlug: 'pots-planters',
-    imageUrl: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1598880940371-c756e015fea1?w=800',
   },
   {
     name: 'Hanging Basket with Coir Liner',
@@ -417,7 +417,7 @@ const products: SeedProduct[] = [
     price: 650,
     stock: 26,
     categorySlug: 'pots-planters',
-    imageUrl: 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=800',
+    imageUrl: 'https://images.unsplash.com/photo-1658508466243-0b82681a3a32?w=800',
   },
 ];
 
