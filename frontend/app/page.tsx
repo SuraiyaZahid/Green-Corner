@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { apiRequest, buildQuery } from '@/lib/api';
 import { HomeProductGrid } from '@/components/HomeProductGrid';
-import { CategoryCard } from '@/components/CategoryCard';
-import type { Category, Product, ProductListResponse } from '@/lib/types';
+import type { Product, ProductListResponse } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,20 +9,15 @@ export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 12;
 
 export default async function HomePage() {
-  let categories: Category[] = [];
   let products: Product[] = [];
   let total = 0;
   let totalPages = 1;
 
   try {
-    const [categoryData, productData] = await Promise.all([
-      apiRequest<Category[]>('/categories', { auth: false }),
-      apiRequest<ProductListResponse>(
-        `/products${buildQuery({ page: 1, limit: PAGE_SIZE })}`,
-        { auth: false },
-      ),
-    ]);
-    categories = categoryData;
+    const productData = await apiRequest<ProductListResponse>(
+      `/products${buildQuery({ page: 1, limit: PAGE_SIZE })}`,
+      { auth: false },
+    );
     products = productData.items;
     total = productData.total;
     totalPages = productData.totalPages;
@@ -33,78 +27,42 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* Hero */}
+      {/* Compact hero */}
       <section className="bg-gradient-to-br from-emerald-800 via-emerald-700 to-emerald-600 text-white">
-        <div className="container mx-auto grid gap-8 px-4 py-14 md:grid-cols-2 md:items-center md:py-20">
-          <div>
-            <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-              Kuril Bisso Road, Dhaka
-            </span>
-            <h1 className="mt-4 text-3xl font-bold leading-tight md:text-5xl">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 py-7 md:py-8">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold leading-tight md:text-2xl">
               Grow something beautiful at home
             </h1>
-            <p className="mt-4 max-w-md text-emerald-50/90">
-              Indoor and outdoor plants, Joibo Sar compost, gardening tools, seed
-              packets and pots — delivered across Bangladesh with Cash on
-              Delivery, bKash and Nagad.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                href="/products"
-                className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-emerald-800 transition-transform hover:-translate-y-0.5"
-              >
-                Shop All Products
-              </Link>
-              <Link
-                href="/products?category=indoor-plants"
-                className="rounded-lg border border-white/40 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                Indoor Plants
-              </Link>
-            </div>
-          </div>
-
-          <div className="relative hidden aspect-square md:block">
-            <div className="absolute inset-0 rounded-3xl bg-white/10 backdrop-blur-sm" />
-            <div className="absolute inset-8 flex items-center justify-center text-8xl">
-              🪴
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">
-              Shop by Category
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Everything you need to start and grow a garden.
+            <p className="mt-1.5 text-sm text-emerald-50/90">
+              Plants, compost, tools, seeds and pots — delivered across
+              Bangladesh.
             </p>
           </div>
-          <Link
-            href="/products"
-            className="text-sm font-semibold text-emerald-700 hover:underline"
-          >
-            View all →
-          </Link>
-        </div>
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          {categories.map((category) => (
-            <CategoryCard key={category.id} category={category} />
-          ))}
+          <div className="flex shrink-0 gap-2">
+            <Link
+              href="/products"
+              className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 md:text-sm"
+            >
+              Shop All
+            </Link>
+            <Link
+              href="/products?category=indoor-plants"
+              className="rounded-lg border border-white/40 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 md:text-sm"
+            >
+              Indoor Plants
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* All products */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-gray-50 py-8">
         <div className="container mx-auto px-4">
-          <div className="mb-6 flex items-end justify-between">
+          <div className="mb-5 flex items-end justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-gray-800 md:text-2xl">
                 All Products
               </h2>
               <p className="mt-1 text-sm text-gray-500">
@@ -113,7 +71,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/products"
-              className="text-sm font-semibold text-emerald-700 hover:underline"
+              className="shrink-0 text-sm font-semibold text-emerald-700 hover:underline"
             >
               Filter & sort →
             </Link>
