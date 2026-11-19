@@ -8,6 +8,7 @@ import { apiRequest, formatBDT } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useCart } from '@/lib/cart-context';
 import { deliveryFeeFor } from '@/lib/delivery';
+import { loginUrlFor } from '@/lib/redirect';
 import { DeliveryAreaPicker } from '@/components/DeliveryAreaPicker';
 import { PaymentMethodPicker } from '@/components/PaymentMethodPicker';
 import { EmptyState } from '@/components/EmptyState';
@@ -45,7 +46,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace('/login?redirect=/checkout');
+      router.replace(loginUrlFor('/checkout'));
     }
   }, [authLoading, user, router]);
 

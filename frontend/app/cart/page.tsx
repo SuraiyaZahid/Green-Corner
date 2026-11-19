@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { formatBDT } from '@/lib/api';
 import { useCart } from '@/lib/cart-context';
 import { useAuth } from '@/lib/auth-context';
+import { loginUrlFor } from '@/lib/redirect';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { EmptyState } from '@/components/EmptyState';
 import { Toast } from '@/components/Toast';
@@ -188,13 +189,13 @@ export default function CartPage() {
             ) : (
               <>
                 <Link
-                  href="/login?redirect=/checkout"
+                  href={loginUrlFor('/checkout')}
                   className="mt-5 block rounded-lg bg-emerald-700 px-6 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
                 >
                   Sign in to Checkout
                 </Link>
                 <p className="mt-2 text-center text-xs text-gray-500">
-                  Your cart is saved on this device. Sign in to check out faster.
+                  Please sign in to add items to your cart or place an order.
                 </p>
               </>
             )}

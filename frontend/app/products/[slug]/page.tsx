@@ -129,6 +129,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <div className="mt-6">
             <AddToCartButton
               productId={product.id}
+              slug={product.slug}
+              name={product.name}
+              imageUrl={product.imageUrl}
               stock={product.stock}
               price={product.price}
             />

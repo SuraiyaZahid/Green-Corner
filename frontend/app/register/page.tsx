@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { safeRedirect } from '@/lib/redirect';
 
 function RegisterForm() {
   const { register } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/account';
+  // The redirect target comes from the URL, so it is validated before use.
+  const redirect = safeRedirect(searchParams.get('redirect'));
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -166,7 +168,7 @@ function RegisterForm() {
         <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{' '}
           <Link
-            href={`/login${redirect !== '/account' ? `?redirect=${redirect}` : ''}`}
+            href={`/login${redirect !== '/account' ? `?redirect=${encodeURIComponent(redirect)}` : ''}`}
             className="font-semibold text-emerald-700 hover:underline"
           >
             Sign in

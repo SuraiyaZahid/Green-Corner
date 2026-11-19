@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { safeRedirect } from '@/lib/redirect';
 
 function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/account';
+  // The redirect target comes from the URL, so it is validated before use.
+  const redirect = safeRedirect(searchParams.get('redirect'));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -103,7 +105,7 @@ function LoginForm() {
         <p className="mt-6 text-center text-sm text-gray-500">
           New to Green Corner?{' '}
           <Link
-            href={`/register${redirect !== '/account' ? `?redirect=${redirect}` : ''}`}
+            href={`/register${redirect !== '/account' ? `?redirect=${encodeURIComponent(redirect)}` : ''}`}
             className="font-semibold text-emerald-700 hover:underline"
           >
             Create an account
