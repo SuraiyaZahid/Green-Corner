@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -39,7 +39,7 @@ export function useCartAction({
   quantity = 1,
   redirectTo,
 }: UseCartActionOptions) {
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -83,7 +83,11 @@ export function useCartAction({
           return;
         }
 
-        setToast({ message: 'Added to your cart.', type: 'success' });
+        setToast({
+          message:
+            quantity > 1 ? `Added ${quantity} to cart!` : 'Added to cart!',
+          type: 'success',
+        });
       } catch (error) {
         if (
           error instanceof ApiError &&
@@ -102,7 +106,7 @@ export function useCartAction({
         setBusy(false);
       }
     },
-    [authLoading, user, performAdd, openPrompt, router],
+    [authLoading, user, performAdd, openPrompt, router, quantity],
   );
 
   // Resume the interrupted action once the visitor completes the sign-in.
@@ -122,11 +126,24 @@ export function useCartAction({
     pendingAction.current = null;
   }, []);
 
+  // How many of this product the visitor already has in the cart. The
+  // backend sets the line quantity rather than incrementing it, so this
+  // has to be read back from the cart instead of tracked locally.
+  const inCartQuantity = useMemo(
+    () =>
+      items.reduce(
+        (sum, item) => (item.productId === product.id ? sum + item.quantity : sum),
+        0,
+      ),
+    [items, product.id],
+  );
+
   return {
     busy,
     promptOpen,
     toast,
     redirectTo,
+    inCartQuantity,
     addToCart: () => run('cart'),
     buyNow: () => run('checkout'),
     closePrompt,

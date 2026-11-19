@@ -1,5 +1,6 @@
 'use client';
 
+import { InCartNote } from '@/components/InCartNote';
 import { SignInPrompt } from '@/components/SignInPrompt';
 import { Toast } from '@/components/Toast';
 import { useCartAction } from '@/lib/use-cart-action';
@@ -17,6 +18,7 @@ export function ProductCardActions({ product }: { product: Product }) {
     promptOpen,
     toast,
     redirectTo,
+    inCartQuantity,
     addToCart,
     buyNow,
     closePrompt,
@@ -56,6 +58,12 @@ export function ProductCardActions({ product }: { product: Product }) {
           Buy Now
         </button>
       </div>
+
+      <InCartNote
+        inCartQuantity={inCartQuantity}
+        stock={product.stock}
+        className="mt-2"
+      />
 
       <SignInPrompt
         open={promptOpen}

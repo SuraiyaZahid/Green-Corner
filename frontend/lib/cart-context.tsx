@@ -45,6 +45,8 @@ interface CartContextValue {
   totalItems: number;
   subtotal: number;
   loading: boolean;
+  /** Item ids whose quantity is currently being written to the server. */
+  pendingItems: string[];
   addItem: (product: AddToCartProduct, quantity: number) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
@@ -58,6 +60,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingItems, setPendingItems] = useState<string[]>([]);
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -93,12 +96,60 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateQuantity = useCallback(async (itemId: string, quantity: number) => {
-    const updated = await apiRequest<Cart>(`/cart/items/${itemId}`, {
-      method: 'PATCH',
-      body: { quantity },
+    // Update locally first so the stepper, the line total and the header
+    // badge move the instant the shopper clicks, then reconcile with the
+    // server response. A failed write restores the previous quantity.
+    setPendingItems((current) => [...current, itemId]);
+
+    // Read the current quantity outside the state updater so the rollback
+    // does not depend on when React runs the updater.
+    const previousQuantity =
+      cart?.items.find((item) => item.id === itemId)?.quantity ?? 0;
+
+    setCart((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        items: current.items.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                quantity,
+                lineTotal: Number((item.unitPrice * quantity).toFixed(2)),
+              }
+            : item,
+        ),
+      };
     });
-    setCart(updated);
-  }, []);
+
+    try {
+      const updated = await apiRequest<Cart>(`/cart/items/${itemId}`, {
+        method: 'PATCH',
+        body: { quantity },
+      });
+      setCart(updated);
+    } catch (error) {
+      // Roll the line back to what it was before this write.
+      setCart((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          items: current.items.map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  quantity: previousQuantity,
+                  lineTotal: Number((item.unitPrice * previousQuantity).toFixed(2)),
+                }
+              : item,
+          ),
+        };
+      });
+      throw error;
+    } finally {
+      setPendingItems((current) => current.filter((id) => id !== itemId));
+    }
+  }, [cart]);
 
   const removeItem = useCallback(async (itemId: string) => {
     const updated = await apiRequest<Cart>(`/cart/items/${itemId}`, {
@@ -123,13 +174,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2),
       ),
       loading,
+      pendingItems,
       addItem,
       updateQuantity,
       removeItem,
       clear,
       refresh,
     }),
-    [cart, items, loading, addItem, updateQuantity, removeItem, clear, refresh],
+    [cart, items, loading, pendingItems, addItem, updateQuantity, removeItem, clear, refresh],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

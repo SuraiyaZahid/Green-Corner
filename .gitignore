@@ -28,3 +28,6 @@ Thumbs.db
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# Stub modules the frontend verification scripts generate at run time.
+frontend/scripts/__next_stubs__/

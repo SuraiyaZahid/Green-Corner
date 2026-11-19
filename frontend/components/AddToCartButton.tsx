@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { InCartNote } from '@/components/InCartNote';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { SignInPrompt } from '@/components/SignInPrompt';
 import { Toast } from '@/components/Toast';
@@ -28,6 +29,7 @@ export function AddToCartButton({
     promptOpen,
     toast,
     redirectTo,
+    inCartQuantity,
     addToCart,
     buyNow,
     closePrompt,
@@ -51,31 +53,40 @@ export function AddToCartButton({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <QuantityStepper
-        value={quantity}
-        onChange={setQuantity}
-        max={Math.min(99, stock)}
-        disabled={busy}
+    <div>
+      <div className="flex flex-wrap items-center gap-3">
+        <QuantityStepper
+          value={quantity}
+          onChange={setQuantity}
+          max={Math.min(99, stock)}
+          disabled={busy}
+        />
+
+        <button
+          type="button"
+          onClick={addToCart}
+          disabled={busy}
+          className="rounded-lg bg-emerald-700 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {busy ? 'Adding…' : 'Add to Cart'}
+        </button>
+
+        <button
+          type="button"
+          onClick={buyNow}
+          disabled={busy}
+          className="rounded-lg border border-emerald-700 px-6 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Buy Now
+        </button>
+      </div>
+
+      <InCartNote
+        inCartQuantity={inCartQuantity}
+        stock={stock}
+        selected={quantity}
+        className="mt-2"
       />
-
-      <button
-        type="button"
-        onClick={addToCart}
-        disabled={busy}
-        className="rounded-lg bg-emerald-700 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {busy ? 'Adding…' : 'Add to Cart'}
-      </button>
-
-      <button
-        type="button"
-        onClick={buyNow}
-        disabled={busy}
-        className="rounded-lg border border-emerald-700 px-6 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        Buy Now
-      </button>
 
       <SignInPrompt
         open={promptOpen}

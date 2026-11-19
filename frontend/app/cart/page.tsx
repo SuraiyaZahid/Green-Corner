@@ -12,8 +12,16 @@ import { EmptyState } from '@/components/EmptyState';
 import { Toast } from '@/components/Toast';
 
 export default function CartPage() {
-  const { items, subtotal, totalItems, updateQuantity, removeItem, clear, loading } =
-    useCart();
+  const {
+    items,
+    subtotal,
+    totalItems,
+    pendingItems,
+    updateQuantity,
+    removeItem,
+    clear,
+    loading,
+  } = useCart();
   const { user } = useAuth();
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(
     null,
@@ -123,11 +131,29 @@ export default function CartPage() {
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                    <QuantityStepper
-                      value={item.quantity}
-                      onChange={(quantity) => handleUpdate(item.id, quantity)}
-                      max={Math.min(99, item.product.stock)}
-                    />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <QuantityStepper
+                        value={item.quantity}
+                        onChange={(quantity) => handleUpdate(item.id, quantity)}
+                        max={Math.min(99, item.product.stock)}
+                      />
+
+                      <span className="text-xs text-gray-500">
+                        {item.quantity} × {formatBDT(item.unitPrice)}
+                      </span>
+
+                      {pendingItems.includes(item.id) && (
+                        <span className="text-xs font-medium text-gray-400">
+                          Saving…
+                        </span>
+                      )}
+
+                      {item.quantity >= Math.min(99, item.product.stock) && (
+                        <span className="text-xs font-medium text-amber-600">
+                          Max stock reached
+                        </span>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-4">
                       <span className="font-bold text-emerald-800">

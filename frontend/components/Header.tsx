@@ -198,7 +198,11 @@ export function Header() {
                 />
               </svg>
               {totalItems > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-xs font-semibold text-white">
+                <span
+                  className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-xs font-semibold text-white"
+                  data-testid="cart-badge"
+                  aria-label={`${totalItems} item${totalItems === 1 ? '' : 's'} in cart`}
+                >
                   {totalItems > 99 ? '99+' : totalItems}
                 </span>
               )}
