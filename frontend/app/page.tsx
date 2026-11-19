@@ -1,22 +1,32 @@
 import Link from 'next/link';
-import { apiRequest } from '@/lib/api';
-import { ProductCard } from '@/components/ProductCard';
+import { apiRequest, buildQuery } from '@/lib/api';
+import { HomeProductGrid } from '@/components/HomeProductGrid';
 import { CategoryCard } from '@/components/CategoryCard';
-import type { Category, Product } from '@/lib/types';
+import type { Category, Product, ProductListResponse } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
+/** How many products the homepage shows before "Load more" is offered. */
+const PAGE_SIZE = 12;
+
 export default async function HomePage() {
   let categories: Category[] = [];
-  let featured: Product[] = [];
+  let products: Product[] = [];
+  let total = 0;
+  let totalPages = 1;
 
   try {
     const [categoryData, productData] = await Promise.all([
       apiRequest<Category[]>('/categories', { auth: false }),
-      apiRequest<Product[]>('/products/featured', { auth: false }),
+      apiRequest<ProductListResponse>(
+        `/products${buildQuery({ page: 1, limit: PAGE_SIZE })}`,
+        { auth: false },
+      ),
     ]);
     categories = categoryData;
-    featured = productData;
+    products = productData.items;
+    total = productData.total;
+    totalPages = productData.totalPages;
   } catch {
     // The API may not be running yet — render the page with empty sections.
   }
@@ -89,37 +99,31 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Featured products */}
+      {/* All products */}
       <section className="bg-gray-50 py-12">
         <div className="container mx-auto px-4">
           <div className="mb-6 flex items-end justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                Featured Products
+                All Products
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Hand picked favourites from our collection.
+                Every plant, compost, tool, seed packet and pot we sell.
               </p>
             </div>
             <Link
               href="/products"
               className="text-sm font-semibold text-emerald-700 hover:underline"
             >
-              View all →
+              Filter & sort →
             </Link>
           </div>
 
-          {featured.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {featured.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-sm text-gray-500">
-              Featured products will appear here once the API is running.
-            </div>
-          )}
+          <HomeProductGrid
+            initialProducts={products}
+            initialTotal={total}
+            initialTotalPages={totalPages}
+          />
         </div>
       </section>
 
