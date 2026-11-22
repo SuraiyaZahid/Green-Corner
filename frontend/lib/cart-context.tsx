@@ -31,6 +31,8 @@ interface CartContextValue {
     unitPrice: number;
     discountedUnitPrice: number;
     lineTotal: number;
+    /** When the line stops holding its stock and is auto-released. */
+    expiresAt: string;
     product: {
       id: string;
       name: string;
@@ -54,10 +56,16 @@ interface CartContextValue {
   discountPercentage: number;
   /** The total the customer actually pays for the items. */
   total: number;
+  /** How long a cart line holds its stock, in minutes. */
+  holdMinutes: number;
   loading: boolean;
   /** Item ids whose quantity is currently being written to the server. */
   pendingItems: string[];
-  addItem: (product: AddToCartProduct, quantity: number) => Promise<void>;
+  addItem: (
+    product: AddToCartProduct,
+    quantity: number,
+    mode?: 'add' | 'set',
+  ) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clear: () => Promise<void>;
@@ -95,12 +103,106 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [authLoading, refresh]);
 
   const addItem = useCallback(
-    async (product: AddToCartProduct, quantity: number) => {
-      const updated = await apiRequest<Cart>('/cart/items', {
-        method: 'POST',
-        body: { productId: product.id, quantity },
+    async (
+      product: AddToCartProduct,
+      quantity: number,
+      mode: 'add' | 'set' = 'add',
+    ) => {
+      // Update locally first so the "X in cart" badge and the header cart
+      // count move the instant the shopper clicks, then reconcile with the
+      // server response. A failed write restores the previous state.
+      setCart((current) => {
+        if (!current) return current;
+
+        const existing = current.items.find(
+          (item) => item.productId === product.id,
+        );
+
+        // "add" grows the existing line, "set" replaces it.
+        const nextQuantity = mode === 'set' ? quantity : (existing?.quantity ?? 0) + quantity;
+
+        const items = existing
+          ? current.items.map((item) =>
+              item.productId === product.id
+                ? {
+                    ...item,
+                    quantity: nextQuantity,
+                    lineTotal: Number(
+                      (item.discountedUnitPrice * nextQuantity).toFixed(2),
+                    ),
+                  }
+                : item,
+            )
+          : [
+              ...current.items,
+              {
+                id: `optimistic-${product.id}`,
+                productId: product.id,
+                quantity: nextQuantity,
+                unitPrice: product.price,
+                discountedUnitPrice: product.price,
+                lineTotal: Number((product.price * nextQuantity).toFixed(2)),
+                expiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(),
+                product: {
+                  id: product.id,
+                  name: product.name,
+                  slug: product.slug,
+                  description: '',
+                  careInstructions: null,
+                  price: product.price,
+                  discountedPrice: product.price,
+                  discountPercentage: current.discountPercentage,
+                  stock: product.stock,
+                  imageUrl: product.imageUrl,
+                  images: [],
+                  isFeatured: false,
+                  isArchived: false,
+                  categoryId: '',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  category: {
+                    id: '',
+                    name: '',
+                    slug: '',
+                  },
+                },
+              },
+            ];
+
+        return {
+          ...current,
+          items,
+          totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
+          subtotal: Number(
+            items
+              .reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+              .toFixed(2),
+          ),
+          total: Number(
+            items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2),
+          ),
+        };
       });
-      setCart(updated);
+
+      try {
+        const updated = await apiRequest<Cart>('/cart/items', {
+          method: 'POST',
+          body: { productId: product.id, quantity, mode },
+        });
+        setCart(updated);
+      } catch (error) {
+        // Re-read the cart from the server, which is the authoritative
+        // state — a plain rollback could clobber a change another tab or
+        // the expiry sweep made in the meantime.
+        try {
+          const current = await apiRequest<Cart>('/cart');
+          setCart(current);
+        } catch {
+          // The cart could not be re-read either; the next refresh will
+          // reconcile it.
+        }
+        throw error;
+      }
     },
     [],
   );
@@ -200,6 +302,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       total: Number(
         items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2),
       ),
+      holdMinutes: cart?.holdMinutes ?? 3,
       loading,
       pendingItems,
       addItem,

@@ -60,9 +60,12 @@ export function useCartAction({
     setPromptOpen(true);
   }, []);
 
-  const performAdd = useCallback(async () => {
-    await addItem(product, quantity);
-  }, [addItem, product, quantity]);
+  const performAdd = useCallback(
+    async (mode: 'add' | 'set') => {
+      await addItem(product, quantity, mode);
+    },
+    [addItem, product, quantity],
+  );
 
   const run = useCallback(
     async (action: CartAction) => {
@@ -75,7 +78,10 @@ export function useCartAction({
 
       setBusy(true);
       try {
-        await performAdd();
+        // "Add to Cart" adds to the line the shopper already has, while
+        // "Buy Now" replaces it. Replacing is what keeps Buy Now from
+        // reserving the product twice and tripping the stock check.
+        await performAdd(action === 'checkout' ? 'set' : 'add');
         pendingAction.current = null;
 
         if (action === 'checkout') {
@@ -138,12 +144,29 @@ export function useCartAction({
     [items, product.id],
   );
 
+  // How many more units of this product the visitor may still add. The
+  // stock shown on the product is the total stock, so the units already
+  // sitting in the cart have to be subtracted — otherwise the stepper
+  // would happily offer more than the store can fulfil.
+  const remainingAvailable = Math.max(0, product.stock - inCartQuantity);
+
+  // The stepper may not offer more than what is actually available, and
+  // never more than the backend accepts in one request.
+  const maxAddable = Math.min(99, remainingAvailable);
+
+  // Everything the shopper could still put in the cart has already been
+  // reserved by their own cart line.
+  const atStockLimit = remainingAvailable === 0;
+
   return {
     busy,
     promptOpen,
     toast,
     redirectTo,
     inCartQuantity,
+    remainingAvailable,
+    maxAddable,
+    atStockLimit,
     addToCart: () => run('cart'),
     buyNow: () => run('checkout'),
     closePrompt,

@@ -19,6 +19,8 @@ export function ProductCardActions({ product }: { product: Product }) {
     toast,
     redirectTo,
     inCartQuantity,
+    remainingAvailable,
+    atStockLimit,
     addToCart,
     buyNow,
     closePrompt,
@@ -36,6 +38,9 @@ export function ProductCardActions({ product }: { product: Product }) {
   });
 
   const outOfStock = product.stock <= 0;
+  // The shopper already has every available unit of this product in their
+  // cart, so there is nothing left to add from the listing.
+  const fullyReserved = !outOfStock && atStockLimit;
 
   return (
     <>
@@ -43,16 +48,22 @@ export function ProductCardActions({ product }: { product: Product }) {
         <button
           type="button"
           onClick={addToCart}
-          disabled={busy || outOfStock}
+          disabled={busy || outOfStock || fullyReserved}
           className="flex-1 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? 'Adding…' : outOfStock ? 'Out of stock' : 'Add to Cart'}
+          {busy
+            ? 'Adding…'
+            : outOfStock
+              ? 'Out of stock'
+              : fullyReserved
+                ? 'Max in cart'
+                : 'Add to Cart'}
         </button>
 
         <button
           type="button"
           onClick={buyNow}
-          disabled={busy || outOfStock}
+          disabled={busy || outOfStock || fullyReserved}
           className="flex-1 rounded-lg border border-emerald-700 px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Buy Now
@@ -64,6 +75,12 @@ export function ProductCardActions({ product }: { product: Product }) {
         stock={product.stock}
         className="mt-2"
       />
+
+      {fullyReserved && (
+        <p className="mt-1 text-xs font-medium text-amber-600">
+          Maximum available stock is already in your cart.
+        </p>
+      )}
 
       <SignInPrompt
         open={promptOpen}

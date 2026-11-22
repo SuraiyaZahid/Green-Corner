@@ -29,6 +29,7 @@ export default function CheckoutPage() {
     discountPercentage,
     total: discountedSubtotal,
     clear,
+    refresh,
   } = useCart();
   const router = useRouter();
 
@@ -53,6 +54,27 @@ export default function CheckoutPage() {
       .then(setMerchant)
       .catch(() => setMerchant(null));
   }, []);
+
+  // A cart line only holds its stock for a short while. If one runs out
+  // while the shopper is on this page, the server drops it, so the page
+  // re-reads the cart instead of showing a line that no longer exists.
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    const check = () => {
+      const now = Date.now();
+      const hasExpired = items.some(
+        (item) => new Date(item.expiresAt).getTime() <= now,
+      );
+
+      if (hasExpired) {
+        void refresh();
+      }
+    };
+
+    const timer = setInterval(check, 5000);
+    return () => clearInterval(timer);
+  }, [items, refresh]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -107,6 +129,11 @@ export default function CheckoutPage() {
       await clear();
       router.push(`/account/orders/${order.id}?placed=1`);
     } catch (err) {
+      // The cart may have lost a line to the expiry sweep while the order
+      // was being placed. Re-read the cart so the page shows what is
+      // actually left instead of a stale total.
+      await refresh();
+
       setError(
         err instanceof Error ? err.message : 'Could not place your order.',
       );

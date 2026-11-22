@@ -172,9 +172,12 @@ async function main() {
 
   console.log('\nCart');
   // The cart and order steps below consume up to 3 units, so pick a product
-  // with enough stock rather than blindly taking the first one.
+  // with enough stock rather than blindly taking the first one. The short
+  // list from the catalogue check only holds the first page, so look at the
+  // full catalogue to be sure a suitable product is there.
+  const catalogue = await call('/products?limit=50', { expected: 200 });
   const cartProduct =
-    products.payload.items.find((p) => p.stock >= 4) ?? products.payload.items[0];
+    catalogue.payload.items.find((p) => p.stock >= 4) ?? products.payload.items[0];
   const productId = cartProduct.id;
   const add = await call('/cart/items', {
     method: 'POST',

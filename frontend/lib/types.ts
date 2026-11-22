@@ -81,6 +81,8 @@ export interface CartItem {
   /** The price actually charged, after the store-wide discount. */
   discountedUnitPrice: number;
   lineTotal: number;
+  /** When the line stops holding its stock and is auto-released. */
+  expiresAt: string;
   product: Product;
 }
 
@@ -96,6 +98,8 @@ export interface Cart {
   discountPercentage: number;
   /** The total the customer actually pays for the items. */
   total: number;
+  /** How long a cart line holds its stock, in minutes. */
+  holdMinutes: number;
 }
 
 export interface OrderItem {

@@ -8,6 +8,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
+import { CartExpiryService } from '../cart/cart-expiry.service';
 import { uniqueSlug } from '../common/utils/slug';
 import { discountedPrice } from '../common/utils/discount';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -23,9 +24,14 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly cartExpiry: CartExpiryService,
   ) {}
 
   async findAll(query: QueryProductsDto) {
+    // Release timed-out cart holds first, so the stock shown on the listing
+    // is the stock the shopper can actually add to their cart.
+    await this.cartExpiry.purgeExpired();
+
     const page = query.page ?? 1;
     const limit = query.limit ?? 12;
 
@@ -78,6 +84,8 @@ export class ProductsService {
 
   /** All live products — used by the seed-adjacent admin list and quick picks. */
   async findFeatured(limit = 8) {
+    await this.cartExpiry.purgeExpired();
+
     const [products, discountPercentage] = await Promise.all([
       this.prisma.product.findMany({
         where: { isArchived: false, isFeatured: true },
@@ -92,6 +100,10 @@ export class ProductsService {
   }
 
   async findBySlug(slug: string) {
+    // Release timed-out cart holds first so the product page agrees with
+    // the cart about what is still available.
+    await this.cartExpiry.purgeExpired();
+
     const product = await this.prisma.product.findFirst({
       where: { slug, isArchived: false },
       include: PRODUCT_INCLUDE,

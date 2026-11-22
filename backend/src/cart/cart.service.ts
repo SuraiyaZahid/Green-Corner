@@ -7,7 +7,13 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { discountedPrice, round2, splitDiscount } from '../common/utils/discount';
-import { AddCartItemDto } from './dto/add-cart-item.dto';
+import {
+  CART_HOLD_MS,
+  CART_HOLD_MINUTES,
+  cartExpiryFromNow,
+} from '../common/constants/cart-hold';
+import { CartExpiryService } from './cart-expiry.service';
+import { AddCartItemDto, CartItemMode } from './dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 
 const CART_INCLUDE = {
@@ -32,6 +38,8 @@ export interface CartView {
     /** The price actually charged, after the store-wide discount. */
     discountedUnitPrice: number;
     lineTotal: number;
+    /** When the line stops holding its stock and is auto-released. */
+    expiresAt: string;
     product: {
       id: string;
       name: string;
@@ -53,6 +61,8 @@ export interface CartView {
   discountPercentage: number;
   /** The total the customer actually pays for the items. */
   total: number;
+  /** How long a cart line holds its stock, in minutes. */
+  holdMinutes: number;
 }
 
 @Injectable()
@@ -60,9 +70,13 @@ export class CartService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly cartExpiry: CartExpiryService,
   ) {}
 
   async getCart(userId: string): Promise<CartView> {
+    // Release anything that already timed out before reading the cart.
+    await this.cartExpiry.purgeExpired();
+
     const cart = await this.prisma.cart.findUnique({
       where: { userId },
       include: CART_INCLUDE,
@@ -79,6 +93,7 @@ export class CartService {
         discountAmount: 0,
         discountPercentage,
         total: 0,
+        holdMinutes: CART_HOLD_MINUTES,
       };
     }
 
@@ -99,7 +114,14 @@ export class CartService {
       where: { cartId_productId: { cartId: cart.id, productId: dto.productId } },
     });
 
-    const requestedQuantity = (existing?.quantity ?? 0) + dto.quantity;
+    // "Add to Cart" adds to whatever the line already holds, while "Buy Now"
+    // replaces it. Replacing matters for Buy Now: buying a product that is
+    // already in the cart would otherwise try to reserve it twice and trip
+    // the stock check.
+    const requestedQuantity =
+      dto.mode === CartItemMode.SET
+        ? dto.quantity
+        : (existing?.quantity ?? 0) + dto.quantity;
 
     if (requestedQuantity > product.stock) {
       throw new ConflictException(
@@ -107,17 +129,20 @@ export class CartService {
       );
     }
 
+    const expiresAt = cartExpiryFromNow();
+
     if (existing) {
       await this.prisma.cartItem.update({
         where: { id: existing.id },
-        data: { quantity: requestedQuantity },
+        data: { quantity: requestedQuantity, expiresAt },
       });
     } else {
       await this.prisma.cartItem.create({
         data: {
           cartId: cart.id,
           productId: dto.productId,
-          quantity: dto.quantity,
+          quantity: requestedQuantity,
+          expiresAt,
         },
       });
     }
@@ -156,9 +181,10 @@ export class CartService {
       );
     }
 
+    // Touching the line restarts its hold window.
     await this.prisma.cartItem.update({
       where: { id: itemId },
-      data: { quantity: dto.quantity },
+      data: { quantity: dto.quantity, expiresAt: cartExpiryFromNow() },
     });
 
     return this.getCart(userId);
@@ -185,6 +211,9 @@ export class CartService {
     return this.getCart(userId);
   }
 
+  /**
+   * Finds the shopper's cart, creating an empty one on first use.
+   */
   private async ensureCart(userId: string) {
     const existing = await this.prisma.cart.findUnique({ where: { userId } });
     if (existing) {
@@ -201,6 +230,7 @@ export class CartService {
         id: string;
         productId: string;
         quantity: number;
+        expiresAt: Date;
         product: {
           id: string;
           name: string;
@@ -229,6 +259,7 @@ export class CartService {
         unitPrice: item.product.price,
         discountedUnitPrice,
         lineTotal: round2(discountedUnitPrice * item.quantity),
+        expiresAt: item.expiresAt.toISOString(),
         product: item.product,
       };
     });
@@ -250,6 +281,9 @@ export class CartService {
       discountAmount,
       discountPercentage,
       total: discountedTotal,
+      holdMinutes: CART_HOLD_MINUTES,
     };
   }
 }
+
+export { CART_HOLD_MS, CART_HOLD_MINUTES };

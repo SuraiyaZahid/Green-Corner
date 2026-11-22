@@ -2,11 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatBDT } from '@/lib/api';
 import { useCart } from '@/lib/cart-context';
 import { useAuth } from '@/lib/auth-context';
 import { loginUrlFor } from '@/lib/redirect';
+import { CartExpiryNotice } from '@/components/CartExpiryNotice';
+import { ItemHoldCountdown } from '@/components/ItemHoldCountdown';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { DiscountBadge } from '@/components/DiscountBadge';
 import { EmptyState } from '@/components/EmptyState';
@@ -20,10 +22,12 @@ export default function CartPage() {
     discountPercentage,
     total,
     totalItems,
+    holdMinutes,
     pendingItems,
     updateQuantity,
     removeItem,
     clear,
+    refresh,
     loading,
   } = useCart();
   const { user } = useAuth();
@@ -53,6 +57,45 @@ export default function CartPage() {
       });
     }
   };
+
+  // The line that runs out first is the one the countdown follows.
+  const soonestExpiry = useMemo(() => {
+    if (items.length === 0) return null;
+
+    const timestamps = items
+      .map((item) => new Date(item.expiresAt).getTime())
+      .filter((value) => Number.isFinite(value));
+
+    if (timestamps.length === 0) return null;
+
+    return new Date(Math.min(...timestamps)).toISOString();
+  }, [items]);
+
+  // When a line times out the server drops it and releases its stock, so the
+  // page re-reads the cart to show what is actually left.
+  const handleExpire = useCallback(() => {
+    void refresh();
+  }, [refresh]);
+
+  // Catch lines that expire while the tab is in the background, where the
+  // countdown timer is throttled.
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    const check = () => {
+      const now = Date.now();
+      const hasExpired = items.some(
+        (item) => new Date(item.expiresAt).getTime() <= now,
+      );
+
+      if (hasExpired) {
+        void refresh();
+      }
+    };
+
+    const timer = setInterval(check, 5000);
+    return () => clearInterval(timer);
+  }, [items, refresh]);
 
   if (loading) {
     return (
@@ -92,6 +135,12 @@ export default function CartPage() {
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
           {/* Line items */}
           <div className="space-y-3">
+            <CartExpiryNotice
+              expiresAt={soonestExpiry}
+              holdMinutes={holdMinutes}
+              onExpire={handleExpire}
+            />
+
             {items.map((item) => (
               <div
                 key={item.id}
@@ -166,6 +215,8 @@ export default function CartPage() {
                           Saving…
                         </span>
                       )}
+
+                      <ItemHoldCountdown expiresAt={item.expiresAt} />
 
                       {item.quantity >= Math.min(99, item.product.stock) && (
                         <span className="text-xs font-medium text-amber-600">

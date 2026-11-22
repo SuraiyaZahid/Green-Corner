@@ -7,6 +7,7 @@ import {
 import { OrderStatus, PaymentMethod, PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
+import { CartExpiryService } from '../cart/cart-expiry.service';
 import { splitDiscount } from '../common/utils/discount';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { deliveryFeeFor } from './delivery.constants';
@@ -23,9 +24,14 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly cartExpiry: CartExpiryService,
   ) {}
 
   async placeOrder(userId: string, dto: CreateOrderDto) {
+    // Drop any cart line whose hold window has passed — it must not be
+    // turned into an order, and its stock belongs back in the pool.
+    await this.cartExpiry.purgeExpired();
+
     const cart = await this.prisma.cart.findUnique({
       where: { userId },
       include: { items: { include: { product: true } } },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { InCartNote } from '@/components/InCartNote';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { SignInPrompt } from '@/components/SignInPrompt';
@@ -33,6 +33,9 @@ export function AddToCartButton({
     toast,
     redirectTo,
     inCartQuantity,
+    remainingAvailable,
+    maxAddable,
+    atStockLimit,
     addToCart,
     buyNow,
     closePrompt,
@@ -42,6 +45,14 @@ export function AddToCartButton({
     quantity,
     redirectTo: `/products/${slug}`,
   });
+
+  // The stepper can never offer more than the store can fulfil, so the
+  // selected quantity is clamped down when the cart fills up the stock.
+  useEffect(() => {
+    if (maxAddable >= 1 && quantity > maxAddable) {
+      setQuantity(maxAddable);
+    }
+  }, [maxAddable, quantity]);
 
   if (stock <= 0) {
     return (
@@ -55,20 +66,24 @@ export function AddToCartButton({
     );
   }
 
+  // Everything that is left is already reserved by this shopper's own cart
+  // line, so there is nothing left to add.
+  const soldOutForThisCart = atStockLimit;
+
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
         <QuantityStepper
           value={quantity}
           onChange={setQuantity}
-          max={Math.min(99, stock)}
-          disabled={busy}
+          max={Math.max(1, maxAddable)}
+          disabled={busy || soldOutForThisCart}
         />
 
         <button
           type="button"
           onClick={addToCart}
-          disabled={busy}
+          disabled={busy || soldOutForThisCart}
           className="rounded-lg bg-emerald-700 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? 'Adding…' : 'Add to Cart'}
@@ -77,19 +92,28 @@ export function AddToCartButton({
         <button
           type="button"
           onClick={buyNow}
-          disabled={busy}
+          disabled={busy || soldOutForThisCart}
           className="rounded-lg border border-emerald-700 px-6 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Buy Now
         </button>
       </div>
 
-      <InCartNote
-        inCartQuantity={inCartQuantity}
-        stock={stock}
-        selected={quantity}
-        className="mt-2"
-      />
+      {soldOutForThisCart ? (
+        <p
+          className="mt-2 text-xs font-medium text-amber-600"
+          data-testid="stock-limit-note"
+        >
+          Maximum available stock is already in your cart.
+        </p>
+      ) : (
+        <InCartNote
+          inCartQuantity={inCartQuantity}
+          stock={stock}
+          selected={quantity}
+          className="mt-2"
+        />
+      )}
 
       <SignInPrompt
         open={promptOpen}
