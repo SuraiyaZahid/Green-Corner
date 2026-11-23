@@ -7,10 +7,10 @@ import type { Product } from '@/lib/types';
 
 export function ProductCard({
   product,
-  showActions = false,
+  showActions = true,
 }: {
   product: Product;
-  /** Show the Add to Cart / Buy Now buttons under the card. */
+  /** Show the Add to Cart / Buy Now buttons under the price. */
   showActions?: boolean;
 }) {
   const inStock = product.stock > 0;
@@ -74,14 +74,17 @@ export function ProductCard({
               discountPercentage={product.discountPercentage}
             />
           </div>
+
+          {/* The action row lives inside the card's link so it sits directly
+              below the price, but its buttons stop the click before it can
+              navigate to the product page. */}
+          {showActions && (
+            <div onClick={(event) => event.preventDefault()}>
+              <ProductCardActions product={product} />
+            </div>
+          )}
         </div>
       </Link>
-
-      {showActions && (
-        <div className="border-t border-gray-100 p-3 pt-0">
-          <ProductCardActions product={product} />
-        </div>
-      )}
     </div>
   );
 }
