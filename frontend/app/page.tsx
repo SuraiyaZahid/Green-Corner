@@ -28,31 +28,47 @@ export default async function HomePage() {
   return (
     <div>
       {/* Compact hero */}
-      <section className="bg-gradient-to-br from-emerald-800 via-emerald-700 to-emerald-600 text-white">
-        <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 py-7 md:py-8">
+      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-brand-800 text-white">
+        {/* Layered botanical accents */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+        >
+          {/* Soft radial glow */}
+          <div className="absolute -left-24 -top-28 h-72 w-72 rounded-full bg-emerald-400/25 blur-3xl" />
+          <div className="absolute -bottom-24 right-0 h-64 w-64 rounded-full bg-lime-300/15 blur-3xl" />
+          {/* Delicate leaf / circle accents */}
+          <div className="absolute right-[12%] top-1/2 h-24 w-24 -translate-y-1/2 rounded-full border border-white/10" />
+          <div className="absolute right-[7%] top-1/2 h-16 w-16 -translate-y-1/2 rounded-full border border-white/[0.07]" />
+          <div className="absolute left-[55%] -top-10 h-40 w-24 rotate-[35deg] rounded-[100%] border border-white/[0.07]" />
+          <div className="absolute bottom-2 left-[22%] h-20 w-16 -rotate-[25deg] rounded-[100%] border border-white/[0.06]" />
+        </div>
+
+        <div className="container relative mx-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-4 px-4 py-7 md:py-9">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold leading-tight md:text-2xl">
+            <h1 className="text-xl font-bold leading-tight tracking-tight md:text-2xl">
               Grow something beautiful at home
             </h1>
-            <p className="mt-1.5 text-sm text-emerald-50/90">
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-emerald-50/85">
               Plants, compost, tools, seeds and pots — delivered across
               Bangladesh.
             </p>
           </div>
 
-          <div className="flex shrink-0 gap-2">
-            <Link
-              href="/products"
-              className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 md:text-sm"
-            >
-              Shop All
-            </Link>
-            <Link
-              href="/products?category=indoor-plants"
-              className="rounded-lg border border-white/40 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10 md:text-sm"
-            >
-              Indoor Plants
-            </Link>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            {[
+              { emoji: '🌿', label: 'Fresh & Healthy Plants' },
+              { emoji: '🚚', label: 'Nationwide Delivery' },
+              { emoji: '💵', label: 'Cash on Delivery' },
+            ].map((badge) => (
+              <span
+                key={badge.label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/95 backdrop-blur-sm transition-colors hover:bg-white/15 md:text-sm"
+              >
+                <span aria-hidden="true">{badge.emoji}</span>
+                {badge.label}
+              </span>
+            ))}
           </div>
         </div>
       </section>
